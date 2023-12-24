@@ -1,17 +1,13 @@
 #!/bin/bash
-# creates a custom JRE and self-contained launcher for application using AppImage
-set -e
+# builds an AppImage of strongbox with a custom JRE
+set -eu
 
-# *prep* on a semver branch but *release* from the master branch.
-# optionally, build from a different branch with "./build-appimage.sh develop" etc.
-branch="${1:-master}"
+# strongbox is required
+path_to_strongbox="$1"
+test -d "$path_to_strongbox"
 
-if [ ! -d strongbox ]; then
-    git clone https://github.com/ogri-la/strongbox --branch "$branch"
-fi
-
-output_dir="$(realpath custom-jre)" # "/path/to/strongbox-appimage/custom-jre"
-rm -rf "$output_dir"
+custom_jre_dir="$(realpath custom-jre)" # "/path/to/strongbox-appimage/custom-jre"
+rm -rf "$custom_jre_dir"
 
 echo "--- building custom JRE ---"
 
@@ -19,7 +15,7 @@ echo "--- building custom JRE ---"
 # - https://docs.oracle.com/en/java/javase/19/docs/specs/man/jlink.html#plugin-compress
 jlink \
     --add-modules "java.sql,java.naming,java.desktop,jdk.unsupported,jdk.crypto.ec" \
-    --output "$output_dir" \
+    --output "$custom_jre_dir" \
     --strip-debug \
     --no-man-pages \
     --no-header-files \
@@ -27,21 +23,21 @@ jlink \
 
 # needed when built using Ubuntu as libjvm.so is *huge*
 # doesn't seem to hurt to strip the other .so files.
-find "$output_dir" -name "*.so" -print0 | xargs -0 strip --preserve-dates --strip-unneeded
+find "$custom_jre_dir" -name "*.so" -print0 | xargs -0 strip --preserve-dates --strip-unneeded
 
-du -sh "$output_dir"
+du -sh "$custom_jre_dir"
 
 echo
 echo "--- building app ---"
 (
-    cd strongbox
+    cd "$path_to_strongbox"
     lein clean
     rm -f resources/full-catalogue.json
     wget https://raw.githubusercontent.com/ogri-la/strongbox-catalogue/master/full-catalogue.json \
         --quiet \
         --directory-prefix resources
     lein uberjar
-    cp ./target/*-standalone.jar "$output_dir/app.jar"
+    cp ./target/*-standalone.jar "$custom_jre_dir/app.jar"
 )
 
 echo
@@ -55,10 +51,9 @@ if [ ! -e appimagetool ]; then
 fi
 rm -rf ./AppDir
 mkdir AppDir
-mv "$output_dir" AppDir/usr
-cp strongbox/AppImage/strongbox.desktop AppDir/
-cp strongbox/resources/strongbox.svg strongbox/resources/strongbox.png AppDir/
-cp strongbox/AppImage/AppRun AppDir/
+mv "$custom_jre_dir" AppDir/usr
+cp ./AppImage/strongbox.desktop ./AppImage/AppRun AppDir/
+cp "$path_to_strongbox/resources/strongbox.svg" "$path_to_strongbox/resources/strongbox.png" AppDir/
 du -sh AppDir/
 rm -f strongbox.appimage # safer than 'rm -f strongbox'
 ARCH=x86_64 ./appimagetool AppDir/ strongbox.appimage
