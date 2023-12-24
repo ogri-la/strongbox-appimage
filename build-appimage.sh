@@ -27,7 +27,7 @@ jlink \
 
 # needed when built using Ubuntu as libjvm.so is *huge*
 # doesn't seem to hurt to strip the other .so files.
-find -name "*.so" | xargs strip --preserve-dates --strip-unneeded
+find "$output_dir" -name "*.so" -print0 | xargs -0 strip --preserve-dates --strip-unneeded
 
 du -sh "$output_dir"
 
@@ -62,8 +62,7 @@ cp strongbox/AppImage/AppRun AppDir/
 du -sh AppDir/
 rm -f strongbox.appimage # safer than 'rm -f strongbox'
 ARCH=x86_64 ./appimagetool AppDir/ strongbox.appimage
-mv strongbox.appimage strongbox
-du -sh strongbox
+du -sh strongbox.appimage
 
 echo
 echo "--- cleaning up ---"
