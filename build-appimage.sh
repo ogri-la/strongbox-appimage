@@ -2,19 +2,15 @@
 # creates a custom JRE and self-contained launcher for application using AppImage
 set -e
 
+# *prep* on a semver branch but *release* from the master branch.
+# optionally, build from a different branch with "./build-appimage.sh develop" etc.
+branch="${1:-master}"
+
 if [ ! -d strongbox ]; then
-    echo "--- cloning strongbox ---"
-    git clone https://github.com/ogri-la/strongbox
-else
-    (
-        cd strongbox
-        git reset --hard
-        git pull
-    )
+    git clone https://github.com/ogri-la/strongbox --branch "$branch"
 fi
 
 output_dir="$(realpath custom-jre)" # "/path/to/strongbox-appimage/custom-jre"
-
 rm -rf "$output_dir"
 
 echo "--- building custom JRE ---"
@@ -51,12 +47,13 @@ echo "--- building app ---"
 echo
 echo "--- building AppImage ---"
 if [ ! -e appimagetool ]; then
-    wget "https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage" \
-        --output-file appimagetool
+    wget \
+        -c "https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage" \
+        -o appimagetool
     mv appimagetool-x86_64.AppImage appimagetool
     chmod +x appimagetool
 fi
-rm -rf ./AppDir strongbox.AppImage strongbox-x86_64.AppImage
+rm -rf ./AppDir
 mkdir AppDir
 mv "$output_dir" AppDir/usr
 cp strongbox/AppImage/strongbox.desktop AppDir/
@@ -64,8 +61,9 @@ cp strongbox/resources/strongbox.svg strongbox/resources/strongbox.png AppDir/
 cp strongbox/AppImage/AppRun AppDir/
 du -sh AppDir/
 rm -f strongbox.appimage # safer than 'rm -f strongbox'
-ARCH=x86_64 ./appimagetool AppDir/ strongbox-x86_64.AppImage
-du -sh strongbox-x86_64.AppImage
+ARCH=x86_64 ./appimagetool AppDir/ strongbox.appimage
+mv strongbox.appimage strongbox
+du -sh strongbox
 
 echo
 echo "--- cleaning up ---"
