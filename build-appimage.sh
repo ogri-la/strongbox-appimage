@@ -1,5 +1,5 @@
 #!/bin/bash
-# builds an AppImage of strongbox with a custom JRE
+# build an AppImage of Strongbox with a custom JRE
 set -eu
 
 # strongbox is required
