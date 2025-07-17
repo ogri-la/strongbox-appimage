@@ -1,3 +1,4 @@
 /strongbox/
 /appimagetool
-/strongbox.appimage
+/strongbox.appimage*
+/strongbox.AppImage*
