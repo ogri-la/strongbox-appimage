@@ -1,5 +1,9 @@
 # strongbox-appimage
 
+*notice: repository superseded by changes in [strongbox-release-script](https://github.com/ogri-la/strongbox-release-script)*
+
+---
+
 Build an AppImage of Strongbox with a custom JRE.
 
 ## Usage
